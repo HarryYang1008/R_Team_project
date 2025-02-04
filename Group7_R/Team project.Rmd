@@ -1,0 +1,13 @@
+---
+title: "A2 Assignment - Refugee Analysis"
+author: "MBAN - Group 7"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+### Team Members:  
+
+Abi Joshua GEORG / Eri Yoshimoto / Hakeem GARCIA \newline
+Nattida TAVAROJN / Neha NAGABHUSHAN / Weikang YANG
