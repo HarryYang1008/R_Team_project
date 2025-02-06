@@ -6,35 +6,52 @@ output:
   html_document: default
 ---
 
-
 ### Team Members:  
 
 Abi Joshua GEORG / Eri Yoshimoto / Hakeem GARCIA \newline
 Nattida TAVAROJN / Neha NAGABHUSHAN / Weikang YANG
 
+## Introduction
 
-## Load and Clean Data
-```{r}
+Refugee migration has been a significant global issue, with various countries experiencing fluctuations in the number of people seeking asylum. This report analyzes refugee data from multiple countries over a span of years to identify trends, patterns, and key insights. The study involves data cleaning, transformation, visualization, and statistical analysis to gain a deeper understanding of global refugee movements.
+
+## Data Preparation and Cleaning
+The dataset initially contained raw refugee statistics, which required significant cleaning before analysis.
+```{r, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(readr)
 # read data from database
 raw_df <- read_csv("data/A2_refugee_status.csv", col_types = cols(.default = "c"))
+```
+
+### Handling Missing and Inconsistent Values
+
+The dataset contained placeholders for missing values, such as "D," "X," and "-", which were converted to "0."
+Numeric values were reformatted by removing commas and converting them into numerical data types.
+```{r, message=FALSE, warning=FALSE}
 # Set NULL value("D", "X", "-")as "0"
 raw_df[raw_df == "D" | raw_df == "X" | raw_df == "-"] <- "0"
 # set the value column as numbers value and delete comma and transfer to numeric value
 raw_df[ , -1] <- lapply(raw_df[ , -1], function(x) as.numeric(gsub(",", "", x)))
 # set cleaned data frame as df and use df in later operation
 # combine "Congo, Democratic Republic" and "Congo, Republic"
-congo_rows <- raw_df %>% filter(`Continent/Country of Nationality` %in% c("Congo, Democratic Republic", "Congo, Republic"))
+congo_rows <- raw_df %>% filter(`Continent/Country of Nationality` %in% 
+                                  c("Congo, Democratic Republic", "Congo, Republic"))
 congo_sum <- colSums(congo_rows[, -1], na.rm = TRUE)
 
 #  remove the original duplicated Congo data
-raw_df <- raw_df %>% filter(!`Continent/Country of Nationality` %in% c("Congo, Democratic Republic", "Congo, Republic"))
+raw_df <- raw_df %>% filter(!`Continent/Country of Nationality` %in% 
+                              c("Congo, Democratic Republic", "Congo, Republic"))
 
 # add the new combined Congo data to the data frame
 raw_df <- raw_df %>%
   add_row(`Continent/Country of Nationality` = "Congo", !!!as.list(congo_sum))
+```
+### Standardizing Country Names
 
+Countries with alternative naming conventions, such as "China, People's Republic" and "Korea, North," were renamed to "China" and "North Korea" for consistency.
+
+```{r, message=FALSE, warning=FALSE}
 # Replace the Countries' name with formal format
 country_df <- raw_df %>%
   mutate(`Continent/Country of Nationality` = case_when(
@@ -42,15 +59,11 @@ country_df <- raw_df %>%
     `Continent/Country of Nationality` == "Korea, North" ~ "North Korea",
     TRUE ~ `Continent/Country of Nationality`
   ))
-
-df <- raw_df
-head(df,85)
-
-
+df <- country_df
 ```
 
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 # create the new dataframe 'contry_df',and remove the un-country row from the dataframe
 # defined the name list that will be removed from the dataframe
 non_countries <- c("Africa", "Asia", "Europe", "North America", 
@@ -71,36 +84,102 @@ print(removed_countries$`Continent/Country of Nationality`)
 # check the new dataframe
 head(country_df)
 ```
+## Trends in Refugee Migration
 
-```{r}
-library(tidyverse)
+### 1. Overall Refugee Trends by Country
 
-# read data
-country_df <- read_csv("country_data.csv")
+A line chart visualizes the refugee numbers from each country over time.
 
-```
-
-```{r}  
-
+```{r, message=FALSE, warning=FALSE}  
 library(ggplot2)
+library(dplyr)
+library(tidyr)
 
-# convert the data to the 'long' varibale type, which will be easy to make the plots
 country_long <- country_df %>%
   pivot_longer(cols = -`Continent/Country of Nationality`, 
-               names_to = "Year", values_to = "Value")
+               names_to = "Year", values_to = "Value") %>%
+  mutate(
+    Year = as.numeric(Year),
+    Value = as.numeric(Value)
+  )
+
+# filter the top 5 for each year
+top_countries_per_year <- country_long %>%
+  group_by(Year) %>%
+  arrange(desc(Value)) %>%
+  slice_head(n = 5)
 
 # plot the line chart
-ggplot(country_long, aes(x = as.numeric(Year), y = Value, color = `Continent/Country of Nationality`)) +
-  geom_line() +
+ggplot(top_countries_per_year, aes(x = Year, y = Value, color = `Continent/Country of Nationality`, group = `Continent/Country of Nationality`)) +
+  geom_line(size = 1) +
   theme_minimal() +
-  labs(title = "The Number of Refugees of each Country Changed by Years",
-       x = "Years",
-       y = "Number of Refugees",
-       color = "Countries") +
-  theme(legend.position = "right")
+  labs(
+    title = "Top 10 Refugee Countries Each Year",
+    x = "Years",
+    y = "Number of Refugees",
+    color = "Countries"
+  ) +
+  scale_x_continuous(limits = c(2005, 2016), breaks = 2005:2016) +
+  theme(
+    legend.position = "right",
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.text.y = element_text(size = 10)
+  )
 
 ```
 ```{r}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+# 将数据转换为长格式
+country_long <- country_df %>%
+  pivot_longer(cols = -`Continent/Country of Nationality`, 
+               names_to = "Year", values_to = "Value") %>%
+  mutate(
+    Year = as.numeric(Year),
+    Value = as.numeric(Value)
+  )
+
+# 筛选每年的前十个国家
+top_countries_per_year <- country_long %>%
+  group_by(Year) %>%
+  arrange(desc(Value)) %>%  # 按难民数量降序排列
+  slice_head(n = 5)  # 取前十个国家
+
+# 绘制折线图
+ggplot(top_countries_per_year, aes(x = Year, y = Value, color = `Continent/Country of Nationality`, group = `Continent/Country of Nationality`)) +
+  geom_line(size = 1) +
+  theme_minimal() +
+  labs(
+    title = "Top 10 Refugee Countries Each Year",
+    x = "Years",
+    y = "Number of Refugees",
+    color = "Countries"
+  ) +
+  scale_fill_manual(
+    name = "Legend", 
+    values = c(
+     "#556b84",  
+     "#d4a373", 
+     "#a8b89a",  
+     "#a29bb3",
+     "#d49391",
+     "#e5d5b2",
+     "#98c4c1",
+     "#b8a38b"
+    )
+  ) +
+  scale_x_continuous(limits = c(2005, 2016), breaks = 2005:2016) +
+  theme(
+    legend.position = "right",
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.text.y = element_text(size = 10)
+  )
+
+```
+
+```{r, message=FALSE, warning=FALSE}
 # Calculate the number of refugees for each state by year
 continent_df <- df %>%
   filter(`Continent/Country of Nationality` %in% c("Africa", "Asia", "Europe", 
@@ -114,26 +193,89 @@ continent_df <- df %>%
 continent_df$Year <- as.numeric(continent_df$Year)
 
 ```
+###  Refugee Trends Across Presidential Terms (2006–2015)
+The analysis of refugee data from 2006 to 2015 provides valuable insights into global migration patterns and highlights the influence of leadership periods on refugee numbers. By combining stacked bar charts with trend lines and presidential term overlays, the visualization effectively tells a compelling story of refugee distribution across continents during the George W. Bush and Barack Obama administrations.
+
+#### Key Insights:
+
+Presidential Term Influence:
+
+##### The data is segmented into two distinct presidential periods:
+  - George W. Bush (2006–2008): This period shows a steady increase in refugee numbers, indicating global conflicts or crises that led to heightened migration.
+  - Barack Obama (2009–2015): The refugee numbers initially declined but later stabilized at higher levels, reflecting the impact of sustained geopolitical challenges during this time.
+  
+### Stacked Bar Chart for Continental Trends:
+
+##### The stacked bar chart provides a breakdown of refugee numbers by continent. Notably:
+ - Asia and Africa consistently contributed the highest numbers of refugees, driven by ongoing conflicts and socio-political instability.
+ - Europe and the Americas saw comparatively smaller contributions, reflecting differences in regional refugee patterns. 
 
 ```{r}
 library(ggplot2)
+library(dplyr)
 
-ggplot(continent_df, aes(x = Year, y = Total_Refugees, color = `Continent/Country of Nationality`)) +
-  geom_line(size = 1.2) +  
-  geom_point(size = 2) +  
+presidents <- data.frame(
+  President = c("G. W. Bush", "Obama"),
+  Start_Year = c(2005, 2009),
+  End_Year = c(2009, 2016)
+)
+
+continent_df <- continent_df %>%
+  mutate(
+    Year = as.numeric(Year),
+    Total_Refugees = as.numeric(Total_Refugees)
+  )
+
+
+yearly_refugees <- continent_df %>%
+  group_by(Year) %>%
+  summarise(Total_Refugees = sum(Total_Refugees, na.rm = TRUE))
+
+
+ggplot() +
+
+  geom_rect(data = presidents, aes(xmin = Start_Year, xmax = End_Year, ymin = 0, ymax = Inf, fill = President), alpha = 0.2) +
+
+  geom_bar(data = continent_df, aes(x = Year, y = Total_Refugees, fill = `Continent/Country of Nationality`), 
+           stat = "identity", position = "stack", width = 0.6) +
+  geom_line(data = yearly_refugees, aes(x = Year, y = Total_Refugees, group = 1), 
+            color = "#9f7abc", size = 2) +
+  scale_fill_manual(
+    name = "Legend", 
+    values = c(
+      "G. W. Bush" = "#556b84",  # color the president
+      "Obama" = "#d4a373", 
+      "Africa" = "#a8b89a",  
+      "Asia" = "#a29bb3",
+      "Europe" = "#d49391",
+      "North America" = "#e5d5b2",
+      "Oceania" = "#98c4c1",
+      "South America" = "#b8a38b"
+    )
+  ) +
+
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
+  scale_x_continuous(limits = c(2005, 2016), breaks = 2005:2016) +
+
   theme_minimal() +
-  labs(title = "The Number of Refugees of each State Changed by Years",
-       x = "Years",
-       y = "Number of Refugees",
-       color = "States") +
-  theme(legend.position = "right")
+  labs(
+    title = "Refugee Numbers by Continent (2006-2015) with Presidential Terms",
+    x = "Year",
+    y = "Total Refugees"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "right"
+  )
 
 ```
 
-```{r}
+
+
+```{r, message=FALSE, warning=FALSE}
 ggplot(continent_df, aes(x = Year, y = `Continent/Country of Nationality`, fill = Total_Refugees)) +
   geom_tile() +  
-  scale_fill_gradient(low = "white", high = "red") +  # set the color
+  scale_fill_gradient(low = "#556b84", high = "#d4a373") +  # set the color
   theme_minimal() +
   labs(title = "The Heat Map of Refugees for each State Changed by Years",
        x = "Years",
@@ -144,28 +286,11 @@ ggplot(continent_df, aes(x = Year, y = `Continent/Country of Nationality`, fill 
 
 ```
 
-
-```{r}
-
-selected_countries <- c("China", "India", "Syria", "Afghanistan", "Ukraine")
-
-filtered_df <- country_long %>% filter(`Continent/Country of Nationality` %in% selected_countries)
-
-ggplot(filtered_df, aes(x = as.numeric(Year), y = Value, color = `Continent/Country of Nationality`)) +
-  geom_line(size = 1.2) +
-  theme_minimal() +
-  labs(title = "Some country with the data of Refugees changed by year",
-       x = "Years",
-       y = "Number of Refugees",
-       color = "Countries") +
-  theme(legend.position = "right")
-
-```
-
-```{r}
+### 3. Heatmap of Refugee Numbers
+```{r, message=FALSE, warning=FALSE}
 ggplot(country_long, aes(x = as.numeric(Year), y = `Continent/Country of Nationality`, fill = Value)) +
   geom_tile() +
-  scale_fill_gradient(low = "white", high = "red") +
+  scale_fill_gradient(low = "#556b84", high = "#d4a373") +
   theme_minimal() +
   labs(title = "The Number of Refugees for Each Country in Each Year",
        x = "Years",
@@ -175,7 +300,7 @@ ggplot(country_long, aes(x = as.numeric(Year), y = `Continent/Country of Nationa
   axis.text.y = element_text(size = 5))
 
 ```
-```{r}
+```{r, message=FALSE, warning=FALSE}
 # Calculate the number of Refugees for each country in Total
 top_countries <- country_long %>%
   group_by(`Continent/Country of Nationality`) %>%
@@ -192,7 +317,8 @@ filtered_df <- country_long %>%
 
 ggplot(filtered_df, aes(x = as.numeric(Year), y = `Continent/Country of Nationality`, fill = Value)) +
   geom_tile() +
-  scale_fill_gradient(low = "white", high = "red") +  
+  scale_fill_gradient(low = "#556b84", high = "#d4a373") +
+  scale_x_continuous(limits = c(2005, 2016), breaks = 2005:2016) +
   theme_minimal() +
   labs(title = "The Heat Map of number of Refugees for top 10 Countries",
        x = "Years",
@@ -201,28 +327,12 @@ ggplot(filtered_df, aes(x = as.numeric(Year), y = `Continent/Country of National
   theme(legend.position = "right",
         axis.text.y = element_text(size = 10))  
 
-```
-
-```{r}
-# Caculate the total number of each year
-yearly_totals <- country_long %>%
-  group_by(Year) %>%
-  summarise(Total = sum(Value, na.rm = TRUE))
-
-# Draw the bar chart
-ggplot(yearly_totals, aes(x = as.numeric(Year), y = Total)) +
-  geom_col(fill = "steelblue") +
-  theme_minimal() +
-  labs(title = "The Global Number of Refuess for each Year",
-       x = "Years",
-       y = "Number of Refugees")
 
 
 ```
 
+### The World Map with Refugees number 
 ```{r, message=FALSE, warning=FALSE}   
-library(tidyverse)
-library(ggplot2)
 library(gganimate)
 library(sf)
 library(rnaturalearth)
@@ -251,24 +361,50 @@ map_data <- world_map %>%
 
 
 ```{r}
-# check the complete of the dataframe
-summary(country_long$Value)
-table(is.na(country_long$Value))  # check is there NULL in the data set
+library(ggplot2)
+library(sf)
+library(dplyr)
 
-ggplot() +
-  geom_sf(data = world_map, fill = "gray90", color = "white") +
-  geom_sf(data = map_data, aes(fill = Value), color = "black") +
-  scale_fill_gradient(low = "yellow", high = "red", na.value = "gray90") +
-  theme_minimal() +
-  labs(title = "global refugee map ", fill = "number of refugees")
+# 
+country_long$Year <- as.numeric(country_long$Year)
+
+#
+plot_yearly_maps <- function(year) {
+  yearly_data <- map_data %>% filter(Year == year)
+  
+  ggplot() +
+    geom_sf(data = world_map, fill = "gray90", color = "white") +
+    geom_sf(data = yearly_data, aes(fill = Value), color = "black") +
+    scale_fill_gradient(low = "#556b84", high = "#d4a373", na.value = "gray90") +
+    theme_minimal() +
+    labs(title = paste("Global Refugee Map - Year", year), fill = "Number of Refugees")
+}
+
+# 
+plot_yearly_maps(2006)
+plot_yearly_maps(2007)
+plot_yearly_maps(2008)
+plot_yearly_maps(2009)
+plot_yearly_maps(2010)
+plot_yearly_maps(2011)
+plot_yearly_maps(2012)
+plot_yearly_maps(2013)
+plot_yearly_maps(2014)
+plot_yearly_maps(2015)
 ```
+
+
+
+
+
+#### below code is for generate the GIF
 
 library(gganimate)
 
 p <- ggplot() +
   geom_sf(data = world_map, fill = "gray90", color = "white") +  # the world map
   geom_sf(data = map_data, aes(fill = Value), color = "black") +  # data refugees
-  scale_fill_gradient(low = "yellow", high = "red", na.value = "gray90") + 
+  scale_fill_gradient(low = "blue", high = "yellow", na.value = "gray90") + 
   theme_minimal() +
   labs(title = "Global Refugees data Map (Year: {frame_time})",
        fill = "Number of Refugees",
@@ -282,3 +418,8 @@ anim_save("refugees_map_smooth.gif", animation = anim)
 
 
 
+
+
+## Conclusion
+
+This analysis provides a comprehensive look at global refugee movements, highlighting key trends, high-risk regions, and changes over time. The combination of data cleaning, visualization, and statistical analysis allows for an in-depth understanding of the factors driving refugee migration, which can support future policy-making and humanitarian efforts.
