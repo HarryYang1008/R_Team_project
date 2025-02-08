@@ -17,6 +17,7 @@ Refugee migration has been a significant global issue, with various countries ex
 
 ## Data Preparation and Cleaning
 The dataset initially contained raw refugee statistics, which required significant cleaning before analysis.
+
 ```{r, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(readr)
@@ -90,94 +91,8 @@ head(country_df)
 
 A line chart visualizes the refugee numbers from each country over time.
 
-```{r, message=FALSE, warning=FALSE}  
-library(ggplot2)
-library(dplyr)
-library(tidyr)
 
-country_long <- country_df %>%
-  pivot_longer(cols = -`Continent/Country of Nationality`, 
-               names_to = "Year", values_to = "Value") %>%
-  mutate(
-    Year = as.numeric(Year),
-    Value = as.numeric(Value)
-  )
 
-# filter the top 5 for each year
-top_countries_per_year <- country_long %>%
-  group_by(Year) %>%
-  arrange(desc(Value)) %>%
-  slice_head(n = 5)
-
-# plot the line chart
-ggplot(top_countries_per_year, aes(x = Year, y = Value, color = `Continent/Country of Nationality`, group = `Continent/Country of Nationality`)) +
-  geom_line(size = 1) +
-  theme_minimal() +
-  labs(
-    title = "Top 10 Refugee Countries Each Year",
-    x = "Years",
-    y = "Number of Refugees",
-    color = "Countries"
-  ) +
-  scale_x_continuous(limits = c(2005, 2016), breaks = 2005:2016) +
-  theme(
-    legend.position = "right",
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    axis.text.y = element_text(size = 10)
-  )
-
-```
-```{r}
-library(ggplot2)
-library(dplyr)
-library(tidyr)
-
-# 将数据转换为长格式
-country_long <- country_df %>%
-  pivot_longer(cols = -`Continent/Country of Nationality`, 
-               names_to = "Year", values_to = "Value") %>%
-  mutate(
-    Year = as.numeric(Year),
-    Value = as.numeric(Value)
-  )
-
-# 筛选每年的前十个国家
-top_countries_per_year <- country_long %>%
-  group_by(Year) %>%
-  arrange(desc(Value)) %>%  # 按难民数量降序排列
-  slice_head(n = 5)  # 取前十个国家
-
-# 绘制折线图
-ggplot(top_countries_per_year, aes(x = Year, y = Value, color = `Continent/Country of Nationality`, group = `Continent/Country of Nationality`)) +
-  geom_line(size = 1) +
-  theme_minimal() +
-  labs(
-    title = "Top 10 Refugee Countries Each Year",
-    x = "Years",
-    y = "Number of Refugees",
-    color = "Countries"
-  ) +
-  scale_fill_manual(
-    name = "Legend", 
-    values = c(
-     "#556b84",  
-     "#d4a373", 
-     "#a8b89a",  
-     "#a29bb3",
-     "#d49391",
-     "#e5d5b2",
-     "#98c4c1",
-     "#b8a38b"
-    )
-  ) +
-  scale_x_continuous(limits = c(2005, 2016), breaks = 2005:2016) +
-  theme(
-    legend.position = "right",
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    axis.text.y = element_text(size = 10)
-  )
-
-```
 
 ```{r, message=FALSE, warning=FALSE}
 # Calculate the number of refugees for each state by year
@@ -243,14 +158,14 @@ ggplot() +
   scale_fill_manual(
     name = "Legend", 
     values = c(
-      "G. W. Bush" = "#556b84",  # color the president
-      "Obama" = "#d4a373", 
+      "G. W. Bush" = "red",  # color the president
+      "Obama" = "blue", 
       "Africa" = "#a8b89a",  
       "Asia" = "#a29bb3",
       "Europe" = "#d49391",
       "North America" = "#e5d5b2",
       "Oceania" = "#98c4c1",
-      "South America" = "#b8a38b"
+      "South America" = "#8A3324"
     )
   ) +
 
@@ -270,27 +185,209 @@ ggplot() +
 
 ```
 
+```{r}
+# Load required libraries
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(patchwork)
+library(countrycode)  # For country to continent mapping
+theme_set(
+  theme_minimal() +  # Base theme
+    theme(
+      plot.background = element_rect(fill = "#e5d5b2", color = NA),  # Set background color
+      panel.background = element_rect(fill = "#e5d5b2", color = NA),  # Set panel background color
+      legend.background = element_rect(fill = "#e5d5b2", color = NA)  # Set legend background color
+    )
+)
+# Load the dataset
+data <- read.csv("country_data.csv")
+
+# Convert the dataset to long format
+data_long <- data %>%
+  pivot_longer(cols = -Country, 
+               names_to = "Year", 
+               values_to = "Value") 
+
+# Step 1: Map countries to continents using countrycode package
+data_long <- data_long %>%
+  mutate(
+    Continent = countrycode(Country, origin = "country.name", destination = "continent")
+  )
+
+# Step 2: Manually classify certain countries as North America
+data_long <- data_long %>%
+  mutate(
+    Continent = ifelse(Country %in% c("Haiti", "Cuba", "Honduras"), "North America", Continent)
+  )
+
+# Step 3: Exclude countries from Oceania and South America
+data_long <- data_long %>%
+  filter(!Continent %in% c("Oceania", "South America"))
+
+# Step 4: Define a function to get top 5 countries by total refugees for each continent
+top_5_per_continent <- function(data, continent, rank) {
+  data %>%
+    filter(Continent == continent) %>%
+    group_by(Country) %>%
+    summarise(Total_Refugees = sum(Value, na.rm = TRUE)) %>%
+    arrange(desc(Total_Refugees)) %>%
+    slice_head(n = rank) %>%
+    inner_join(data, by = "Country")
+}
+
+# Step 5: Get the top 5 countries for each continent
+asia_data <- top_5_per_continent(data_long, "Asia", 5)
+africa_data <- top_5_per_continent(data_long, "Africa", 5)
+north_america_data <- top_5_per_continent(data_long, "North America", 3)  # Now includes manually classified countries
+europe_data <- top_5_per_continent(data_long, "Europe", 5)
+
+# Step 6: Define a function to create line plots for each continent
+plot_continent <- function(data, title) {
+  ggplot(data, aes(x = Year, y = Value, color = Country, group = Country)) +
+    geom_line(size = 1) +
+    theme_minimal() +
+    labs(title = title, x = "Year", y = "Number of Refugees", color = "Countries") +
+    theme(
+      legend.position = "bottom",
+      legend.text = element_text(size = 8)
+    ) +
+    guides(color = guide_legend(ncol = 2)) +
+    scale_y_continuous(
+      limits = c(0, max(data$Value, na.rm = TRUE) * 1.2),  # Extend Y-axis by 20%
+      breaks = scales::pretty_breaks(n = 10)  # Add more breaks for readability
+    )
+}
 
 
-```{r, message=FALSE, warning=FALSE}
-ggplot(continent_df, aes(x = Year, y = `Continent/Country of Nationality`, fill = Total_Refugees)) +
-  geom_tile() +  
-  scale_fill_gradient(low = "#556b84", high = "#d4a373") +  # set the color
-  theme_minimal() +
-  labs(title = "The Heat Map of Refugees for each State Changed by Years",
-       x = "Years",
-       y = "States",
-       fill = "Number of Refugees") +
-  theme(legend.position = "right",
-        axis.text.y = element_text(size = 10))
+# Step 7: Create individual line plots for each continent
+plot_asia <- plot_continent(asia_data, "Top 5 Refugee Countries in Asia")
+plot_africa <- plot_continent(africa_data, "Top 5 Refugee Countries in Africa")
+plot_north_america <- plot_continent(north_america_data, "Top 5 Refugee Countries in North America")
+plot_europe <- plot_continent(europe_data, "Top 5 Refugee Countries in Europe")
+
+# Define custom colors for countries
+custom_colors <- c(
+  # Asia
+  "Bhutan" = "#a8b89a", "Iraq" = "#a29bb3", "Burma" = "#d49391",
+  "Vietnam" = "#e5d5b2", "Iran" = "#8A3324",
+  
+  # Africa
+  "Burundi" = "#a8b89a", "Somalia" = "#a29bb3", "Congo" = "#d49391",
+  "Sudan" = "#e5d5b2", "Eritrea" = "#8A3324",
+  
+  # North America
+  "Cuba" = "#a8b89a", "Honduras" = "#a29bb3", "Haiti" = "#d49391",
+  
+  # Europe
+  "Belarus" = "#a8b89a", "Russia" = "#a29bb3", "Latvia" = "#d49391",
+  "Ukraine" = "#e5d5b2", "Moldova" = "#8A3324"
+)
+
+# Adjust plot dimensions for a single column layout
+options(repr.plot.width = 15, repr.plot.height = 30)
+
+# Modify the plot_continent function to include custom line colors
+plot_continent <- function(data, title) {
+  ggplot(data, aes(x = Year, y = Value, color = Country, group = Country)) +
+    geom_line(size = 1) +
+    theme_minimal() +
+    labs(title = title, x = "Year", y = "Number of Refugees", color = "Countries") +
+    theme(
+      legend.position = "bottom",
+      legend.text = element_text(size = 8),
+      axis.text.x = element_text(angle = 45, hjust = 1)
+    ) +
+    scale_y_continuous(
+      breaks = scales::pretty_breaks(n = 5)  # Adjust Y-axis breaks dynamically
+    ) +
+    scale_color_manual(values = custom_colors)  # Apply custom colors
+}
+
+# Create updated plots for each continent
+plot_asia <- plot_continent(asia_data, "Top 5 Refugee Countries in Asia")
+plot_africa <- plot_continent(africa_data, "Top 5 Refugee Countries in Africa")
+plot_north_america <- plot_continent(north_america_data, "Top 5 Refugee Countries in North America")
+plot_europe <- plot_continent(europe_data, "Top 5 Refugee Countries in Europe")
+
+# Combine plots with a single column layout
+plot_asia
+plot_africa
+plot_north_america
+plot_europe 
 
 ```
 
+```{r}
+# Load required libraries
+library(dplyr)
+library(tidyr)
+
+# Load the dataset
+data <- read.csv("country_data.csv")
+
+# Convert the dataset to long format
+data_long <- data %>%
+  pivot_longer(cols = -Country, names_to = "Year", values_to = "Refugees")
+# Step 1: Find the top 10 countries by refugees for each year
+top10_per_year <- data_long %>%
+  group_by(Year) %>%
+  slice_max(order_by = Refugees, n = 3) %>%
+  ungroup()
+
+# Step 2: Extract all years' data for these top countries
+top_countries <- unique(top10_per_year$Country)  # Get unique top countries
+all_data_top_countries <- data_long %>%
+  filter(Country %in% top_countries)  # Filter all years for top countries
+
+# View the data
+print(all_data_top_countries)
+
+# Save to a new CSV file if needed
+write.csv(all_data_top_countries, "all_top_countries_refugees.csv", row.names = FALSE)
+
+
+# Load required libraries
+library(ggplot2)
+library(dplyr)
+
+# Ensure data is loaded into all_data_top_countries
+# If not already loaded, reload the dataset
+all_data_top_countries <- read.csv("all_top_countries_refugees.csv")
+
+# Create a line plot for all top countries over the years
+ggplot(all_data_top_countries, aes(x = Year, y = Refugees, color = Country, group = Country)) +
+  geom_line(size = 1) +  # Add lines for each country
+  theme_minimal() +  # Use a minimal theme
+  labs(
+    title = "Refugee Numbers for Top Countries (2006-2015)",
+    x = "Year",
+    y = "Number of Refugees",
+    color = "Countries"
+  ) +
+  theme(
+    legend.position = "bottom",  # Move legend to the bottom
+    legend.text = element_text(size = 8),  # Adjust legend text size
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels
+  )
+
+```
+
+
+
 ### 3. Heatmap of Refugee Numbers
 ```{r, message=FALSE, warning=FALSE}
+country_long <- country_df %>%
+  pivot_longer(cols = -`Continent/Country of Nationality`, 
+               names_to = "Year", values_to = "Value") %>%
+  mutate(
+    Year = as.numeric(Year),
+    Value = as.numeric(Value)
+  )
+
 ggplot(country_long, aes(x = as.numeric(Year), y = `Continent/Country of Nationality`, fill = Value)) +
   geom_tile() +
-  scale_fill_gradient(low = "#556b84", high = "#d4a373") +
+  scale_fill_gradient(low = "#556b84", high = "#d4a373") + 
   theme_minimal() +
   labs(title = "The Number of Refugees for Each Country in Each Year",
        x = "Years",
@@ -300,36 +397,7 @@ ggplot(country_long, aes(x = as.numeric(Year), y = `Continent/Country of Nationa
   axis.text.y = element_text(size = 5))
 
 ```
-```{r, message=FALSE, warning=FALSE}
-# Calculate the number of Refugees for each country in Total
-top_countries <- country_long %>%
-  group_by(`Continent/Country of Nationality`) %>%
-  summarise(Total_Refugees = sum(Value, na.rm = TRUE)) %>%
-  arrange(desc(Total_Refugees)) %>%
-  slice_head(n = 10)  #  pick top 10
 
-# get the name of country in top 10
-top_country_names <- top_countries$`Continent/Country of Nationality`
-
-# filter the data with top 10
-filtered_df <- country_long %>%
-  filter(`Continent/Country of Nationality` %in% top_country_names)
-
-ggplot(filtered_df, aes(x = as.numeric(Year), y = `Continent/Country of Nationality`, fill = Value)) +
-  geom_tile() +
-  scale_fill_gradient(low = "#556b84", high = "#d4a373") +
-  scale_x_continuous(limits = c(2005, 2016), breaks = 2005:2016) +
-  theme_minimal() +
-  labs(title = "The Heat Map of number of Refugees for top 10 Countries",
-       x = "Years",
-       y = "Countries",
-       fill = "Number of Refugees") +
-  theme(legend.position = "right",
-        axis.text.y = element_text(size = 10))  
-
-
-
-```
 
 ### The World Map with Refugees number 
 ```{r, message=FALSE, warning=FALSE}   
@@ -357,15 +425,6 @@ country_long <- country_long %>%
 map_data <- world_map %>%
   left_join(country_long, by = c("name" = "country"))
 
-```
-
-
-```{r}
-library(ggplot2)
-library(sf)
-library(dplyr)
-
-# 
 country_long$Year <- as.numeric(country_long$Year)
 
 #
