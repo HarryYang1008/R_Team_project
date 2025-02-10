@@ -1,9 +1,7 @@
 ---
-title: "A2:Refugees Report"
-author: "MBAN - Group 7"
-output:
-  pdf_document: default
-
+title: "A2 Assignment - Refugee Analysis report"
+output: pdf_document
+date: "2025-02-10"
 ---
 
 ### Team Members:  
@@ -13,7 +11,7 @@ Nattida TAVAROJN / Neha NAGABHUSHAN / Weikang YANG
 
 
 ### Visualization #1: Refugee Number by Continent (Stacked Bar Chart)
-![Refugee Numbers by Continent with Presidential Terms](./png/Refugee Numbers by Continent with Presidential Terms.png)
+![Refugee Numbers by Continent with Presidential Terms](png/Refugee_Numbers_by_Continent_with_Presidential_Terms.png)
 This illustration represents the flow of refugee admissions into the United States, from 2006 through 2015, by continent of origin. It also overlays U.S. presidential terms on top to explore possible correlation between trends of refugee admission and which political administration it falls under. The stacked bar graph also shows the shifting regional composition of refugees through time, and the background shading distinguishes between the presidencies of George W. Bush and Barack Obama.
 
 **Key findings from the chart:**\newline
@@ -37,9 +35,9 @@ This illustration represents the flow of refugee admissions into the United Stat
 - Enlightenment: This visualization encourages critical thinking about policy trends and regional shifts in global refugee movements.\newline
  
 ### Visualization #2: Top 5 Refugee countries by Continent (For all 4 Line Graphs)
-![Top 5 Refugee countries in Africa](./output_plot/plot_africa.png)
-![Top 5 Refugee countries in Asia](./png/plot_asia.png)
-![Top 5 Refugee countries in Europe](./png/plot_europe.png)
+![Top 5 Refugee countries in Africa](png/plot_africa.png)
+![Top 5 Refugee countries in Asia](png/plot_asia.png)
+![Top 5 Refugee countries in Europe](png/plot_europe.png)
 ![Top 5 Refugee countries in Europe](./png/plot_north_america.png)
 These graphs represent the top refugee sending countries of Asia, Africa, North America, and Europe for the period from 2006 to 2015. The following line graph outlines refugees from different countries over ye.
 
@@ -51,10 +49,10 @@ These graphs represent the top refugee sending countries of Asia, Africa, North 
 
 
 **CRAP:**\newline
- - Contrast: Every country has its color, and so they would be differentiated. \newline
- - Repetition: All four graphs follow the same layout, making comparisons easier.\newline
- - Alignment: The x-axis represents time from 2006 to 2015, making sure chronological order is consistent. \newline
- - Proximity: Legend of all 4 visualizations are placed near the graphs to increase readability.\newline
+ - Contrast: Every country has its color, and so they would be differentiated. 
+ - Repetition: All four graphs follow the same layout, making comparisons easier.
+ - Alignment: The x-axis represents time from 2006 to 2015, making sure chronological order is consistent. 
+ - Proximity: Legend of all 4 visualizations are placed near the graphs to increase readability.
 
  **Kieran Healy’s Principles:**\newline
 - Simplicity & Clarity: The focus is only on the top five countries per continent and hence it reduces clutter and enhances readability.\newline
@@ -64,7 +62,7 @@ These graphs represent the top refugee sending countries of Asia, Africa, North 
  
 ### Visualization #3: Refugee Numbers for Top Countries (Line Graph)
 
-![Refugee Numbers for Top Countries](png/Refugee Numbers for Top Countries 2006-2015.png)
+![Refugee Numbers for Top Countries](png/Refugee_Numbers_for_Top_Countries_2006-2015.png)
 
 
 
@@ -92,7 +90,7 @@ This visualization is a line graph showing the refugee population from top contr
 - Comparative Analysis: This chart allows for direct comparisons across countries to understand any variations in refugee movements over time.\newline
  
 ### Visualization #4: Number of Refugees for each country in each year (HEATMAP)
-![The Number of Refugees for Each Country in Each Year](png/The Number of Refugees for Each Country in Each Year.png)
+![The Number of Refugees for Each Country in Each Year](png/The_Number_of Refugees_for_Each Country_in_Each Year.png)
 
 
 This heat map displays refugee admissions from various countries between the 2006 and 2015 period, where the shading intensity represents the number of refugees. Darker shade indicates fewer refugees, while lighter shades highlight higher refugee numbers.\newline
