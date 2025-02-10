@@ -172,9 +172,9 @@ ggplot() +
     axis.text.x = element_text(angle = 45, hjust = 1),
     legend.position = "right"
   )
-
+dir.create("output_plot", showWarnings = FALSE)
 ggsave("./output_plot/Refugee Numbers by Continent with Presidential Terms.svg", width = 10, height = 6, dpi = 300, device = "svg")
-
+ggsave("./png/Refugee Numbers by Continent with Presidential Terms.png", width = 10, height = 6, dpi = 300)
 
 ```
 
@@ -313,6 +313,10 @@ lapply(seq_along(continent_names), function(i) {
   ggsave(paste0("output_plot/plot_", continent_names[i], ".svg"),
          plots[[i]], width = 10, height = 6, dpi = 300)
 })
+lapply(seq_along(continent_names), function(i) {
+  ggsave(paste0("png/plot_", continent_names[i], ".png"),
+         plots[[i]], width = 10, height = 6, dpi = 300)
+})
 ```
 
 ```{r}
@@ -347,7 +351,7 @@ write.csv(all_data_top_countries, "all_top_countries_refugees.csv", row.names = 
 all_data_top_countries <- read.csv("all_top_countries_refugees.csv")
 
 # Create a line plot for all top countries over the years
-ggplot(all_data_top_countries, aes(x = Year, y = Refugees, color = Country, group = Country)) +
+p00 <- ggplot(all_data_top_countries, aes(x = Year, y = Refugees, color = Country, group = Country)) +
   geom_line(size = 1) +  # Add lines for each country
   theme_minimal() +  # Use a minimal theme
   labs(
@@ -361,7 +365,9 @@ ggplot(all_data_top_countries, aes(x = Year, y = Refugees, color = Country, grou
     legend.text = element_text(size = 8),  # Adjust legend text size
     axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels
   )
-ggsave("output_plot/Refugee Numbers for Top Countries (2006-2015).svg", p2006, width = 8, height = 6, dpi = 300, device = "svg")
+ggsave("output_plot/Refugee Numbers for Top Countries 2006-2015.svg", p00, width = 8, height = 6, dpi = 300, device = "svg")
+ggsave("png/Refugee Numbers for Top Countries 2006-2015.png", p00, width = 8, height = 6, dpi = 300)
+p00
 ```
 
 
@@ -376,7 +382,7 @@ country_long <- country_df %>%
     Value = as.numeric(Value)
   )
 
-ggplot(country_long, aes(x = as.numeric(Year), y = `Continent/Country of Nationality`, fill = Value)) +
+p0 <- ggplot(country_long, aes(x = as.numeric(Year), y = `Continent/Country of Nationality`, fill = Value)) +
   geom_tile() +
   scale_fill_gradient(low = "#556b84", high = "#d4a373") + 
   theme_minimal() +
@@ -386,7 +392,9 @@ ggplot(country_long, aes(x = as.numeric(Year), y = `Continent/Country of Nationa
        fill = "Number of Refugees") +
   theme(legend.position = "right",
   axis.text.y = element_text(size = 5))
-ggsave("output_plot/The Number of Refugees for Each Country in Each Year.svg", p2006, width = 10, height = 6, dpi = 300, device = "svg")
+ggsave("output_plot/The Number of Refugees for Each Country in Each Year.svg",p0, width = 10, height = 6, dpi = 300, device = "svg")
+ggsave("png/The Number of Refugees for Each Country in Each Year.png",p0, width = 10, height = 6, dpi = 300)
+p0
 ```
 
 
@@ -448,6 +456,9 @@ plots <- list(p2006, p2007, p2008, p2009, p2010, p2011, p2012, p2013, p2014, p20
 lapply(seq_along(years), function(i) {
   ggsave(paste0("output_plot/p", years[i], ".svg"), plots[[i]], width = 8, height = 6, dpi = 300)
 })
+lapply(seq_along(years), function(i) {
+  ggsave(paste0("png/p", years[i], ".png"), plots[[i]], width = 8, height = 6, dpi = 300)
+})
 
 ```
 
@@ -481,3 +492,8 @@ anim_save("refugees_map_smooth.gif", animation = anim)
 ## Conclusion
 
 This analysis provides a comprehensive look at global refugee movements, highlighting key trends, high-risk regions, and changes over time. The combination of data cleaning, visualization, and statistical analysis allows for an in-depth understanding of the factors driving refugee migration, which can support future policy-making and humanitarian efforts.
+
+
+
+
+
